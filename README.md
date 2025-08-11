@@ -1,41 +1,25 @@
-# 🎵 Music Skill Builder
+# Music Skill Builder 🎵
+耳と音感を鍛える音楽トレーニングアプリ集
 
-A web app to train your chord recognition and improve your playing.  
-**Practice Smarter, Play Better.**
+このリポジトリは、複数の音楽スキル向上ツールをまとめたプロジェクトです。  
+各アプリは音感・リズム・即興演奏など、異なるスキルを鍛えることを目的としています。
 
----
+## 目次
+1. [What's your key?](apps/whats-your-key/README.md)  
+   - 調（Key）や音名を素早く判別するトレーニング
+   - [アプリページ](https://yuki-fuku.github.io/Music_Skill_Builder/apps/whats-your-key/)
 
-## 🚀 Features
-- 🎼 **Chord recognition training**
-- 🎯 **Practice tracking**
-- 📈 **Progress visualization**
-
----
-
-## 🛠 Getting Started
-
-1. **Clone this repository**
-    ```bash
-    git clone https://github.com/Yuki-fuku/Music_Skill_Builder.git
-    ```
-
-2. **Install dependencies**
-    ```bash
-    npm install
-    ```
-
-3. **Start development server**
-    ```bash
-    npm run dev
-    ```
+2. （今後追加予定のアプリ名）  
+   - 機能概要  
+   - アプリページリンク
 
 ---
 
-## 🤝 Contributing
-Pull requests are welcome!  
-For major changes, please open an issue first to discuss what you would like to change.
+## 開発・利用方法
+- 各アプリは `apps/` フォルダ内に格納
+- `README.md` にそれぞれの使い方とアプリリンクを記載
+- GitHub Pages を利用して公開
 
----
+## 公開ページ（トップ）
+[https://yuki-fuku.github.io/Music_Skill_Builder/](https://yuki-fuku.github.io/Music_Skill_Builder/)
 
-## 📜 License
-This project is licensed under the MIT License.

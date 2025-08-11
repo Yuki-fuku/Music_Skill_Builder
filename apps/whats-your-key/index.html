@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>ii–V / V7 ルート当て（モード切替）</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#111822">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<!-- OG（共有用・任意） -->
+<meta property="og:title" content="ii–V / V7 ルート当て">
+<meta property="og:description" content="スマホでさくっと鍵盤トレーニング">
+<meta property="og:type" content="website">
+<meta property="og:url" content="YOUR_PAGES_URL">
+<meta property="og:image" content="icons/icon-512.png">
+
+<style>
+  :root{
+    --bg1:#0b0c10; --bg2:#1f2833; --fg:#eaf2f8;
+    --ok:#27e98b; --warn:#ffd54f; --bad:#ff6b6b;
+    --card:#111822; --btn:#243447; --btnH:#2f4b66; --acc:#66fcf1;
+  }
+  html,body{margin:0;padding:0;background:linear-gradient(180deg,var(--bg1),var(--bg2));color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:900px;margin:0 auto;padding:20px}
+  h1{margin:6px 0 2px;font-size:1.6rem;letter-spacing:.02em;color:#9ee7ff;text-shadow:0 0 14px #0bb}
+  .card{background:var(--card);border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .mt{margin-top:16px}
+  .muted{opacity:.8}
+
+  .start-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .sbtn{border:none;border-radius:12px;padding:14px 10px;background:var(--btn);color:var(--fg);font-weight:700;font-size:1.05rem}
+  .sbtn:hover{background:var(--btnH);cursor:pointer}
+  .sbtn.active{outline:2px solid var(--acc); box-shadow:0 0 0 3px rgba(102,252,241,.15) inset;}
+
+  .banner{font-size:2.2rem;font-weight:900;letter-spacing:.02em;text-align:center;text-shadow:0 0 18px rgba(102,252,241,.4)}
+  .sub{font-size:.95rem;text-align:center;margin-top:6px;color:#b9c7d6}
+  .pbox{height:22px;border-radius:12px;background:#2b3542;overflow:hidden}
+  .bar{height:100%;width:100%;background:linear-gradient(90deg,#22e9a8,#18b7ff);transition:width .08s linear,background-color .2s}
+  .clock{font-variant-numeric:tabular-nums;font-weight:700}
+
+  .keys{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+  .kbtn{border:none;border-radius:12px;padding:14px 0;background:#203040;color:var(--fg);font-size:1.0rem;font-weight:800}
+  .kbtn:active{transform:scale(.98)}
+
+  .dots{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+  .dot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#2b3542;font-weight:900}
+  .dot.ok{background:rgba(39,233,139,.2);border:2px solid var(--ok);color:var(--ok)}
+  .dot.ng{background:rgba(255,107,107,.18);border:2px solid var(--bad);color:var(--bad)}
+  .dot.pending{border:2px dashed #4b5b70;color:#91a2b6}
+
+  .flash{margin-top:12px;padding:10px;border-radius:10px;text-align:center;font-weight:800}
+  .flash.ok{background:rgba(39,233,139,.12);border:1px solid var(--ok);color:var(--ok)}
+  .flash.ng{background:rgba(255,107,107,.12);border:1px solid var(--bad);color:var(--bad)}
+
+  .big{font-size:1.25rem;font-weight:800}
+  .table{width:100%;border-collapse:collapse;margin-top:10px}
+  .table th,.table td{padding:8px 10px;border-bottom:1px solid #2d3b4a;font-size:.95rem}
+  .tag{display:inline-block;padding:2px 8px;border-radius:10px;font-weight:700;font-size:.8rem}
+  .tag.ok{background:rgba(39,233,139,.18);color:var(--ok);border:1px solid var(--ok)}
+  .tag.ng{background:rgba(255,107,107,.18);color:var(--bad);border:1px solid var(--bad)}
+
+  /* ====== モバイル安定パッチ ====== */
+
+/* 文字がデカすぎ／小さすぎを防ぐ */
+.banner{ font-size: clamp(1.4rem, 7vw, 2.2rem); }
+.sub{ font-size: clamp(.8rem, 3.4vw, .95rem); }
+
+/* キーボタン：端末幅に応じて自動段組 */
+.keys{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(62px, 1fr));
+  gap: 10px;
+}
+.kbtn{ padding: 12px 0; font-size: clamp(.9rem, 3.6vw, 1rem); }
+
+/* 外枠：左右の余白と安全領域（iPhoneノッチ） */
+.wrap{ padding: max(16px, env(safe-area-inset-top)) 16px
+               max(20px, env(safe-area-inset-bottom)); }
+
+/* 進捗バー：極小画面で高さを抑える */
+.pbox{ height: 18px; }
+.clock{ font-size: clamp(.95rem, 3.6vw, 1.05rem); }
+
+/* ○×ドットが折り返しで潰れないように */
+.dots{ gap: 6px; }
+.dot{ width: 24px; height: 24px; font-size: .9rem; }
+
+/* 結果テーブルがはみ出す時は横スクロール */
+#result .card{ overflow-x: auto; }
+.table{ min-width: 600px; }
+
+/* iOSのタップ時の青ハイライトやズーム暴発を軽減 */
+*{ -webkit-tap-highlight-color: rgba(0,0,0,0); }
+button{ touch-action: manipulation; }
+
+/* ごく小さい端末向けの最終セーフティ */
+@media (max-width: 360px){
+  .banner{ font-size: clamp(1.2rem, 6.8vw, 1.7rem); }
+  .kbtn{ padding: 10px 0; }
+  .pbox{ height: 16px; }
+}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ii–V / V7 ルート当て（スピード）</h1>
+
+  <!-- start -->
+  <div id="start" class="card">
+    <p class="muted">問題タイプ：</p>
+    <div class="start-grid" id="mode-row" style="margin-bottom:10px">
+      <button class="sbtn" id="btn-mode-iiv" onclick="setMode('iiV')">ii–V</button>
+      <button class="sbtn" id="btn-mode-v7"  onclick="setMode('V7')">V7</button>
+      <button class="sbtn" id="btn-mode-mix" onclick="setMode('mix')">ii–V + V7 MIX</button>
+    </div>
+
+    <p class="muted">難易度（1問あたりの制限時間）を選んでスタート</p>
+    <div class="start-grid">
+      <button class="sbtn" onclick="startGame(3)">3 秒</button>
+      <button class="sbtn" onclick="startGame(5)">5 秒</button>
+      <button class="sbtn" onclick="startGame(10)">10 秒</button>
+    </div>
+    <p class="muted mt">全10問／メジャー＆マイナー混合。<br>表示に対して解決する <b>I のルート</b> をタップ！</p>
+  </div>
+
+  <!-- game -->
+  <div id="game" class="card" style="display:none">
+    <div class="row" style="justify-content:space-between">
+      <div>Q<span id="qnum">1</span>/10</div>
+      <div class="clock">残り <span id="tleft">0.0</span> s</div>
+    </div>
+    <div class="pbox mt"><div id="pbar" class="bar"></div></div>
+
+    <div class="banner mt" id="question">ii–V: Dm7 → G7</div>
+    <div class="sub" id="hint">（25は m7–7／マイナーは m7♭5–7(♭9)表示。V7モードは V7 だけ表示）</div>
+
+    <div class="keys mt" id="answers"></div>
+
+    <div id="flash" class="flash" style="display:none"></div>
+
+    <div class="mt">
+      <div class="dots" id="dots"></div>
+    </div>
+  </div>
+
+  <!-- result -->
+  <div id="result" class="card" style="display:none">
+    <div class="big">結果：<span id="score"></span> / 10</div>
+    <div class="mt dots" id="summaryDots"></div>
+    <div class="mt">
+      <table class="table" id="summaryTable">
+        <thead><tr><th>#</th><th>タイプ</th><th>問題表示</th><th>正解 I（推奨）</th><th>あなた</th><th>結果</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="mt" style="text-align:center">
+      <button class="sbtn" onclick="resetAll()">もう一度</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Service Worker 登録（PagesのHTTPSで有効）*/
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(console.error);
+  });
+}
+
+/* ===== Data ===== */
+const MAJOR = [
+  {I:'C',  ii:'Dm7',  V:'G7'},
+  {I:'Db', ii:'Ebm7', V:'Ab7'},
+  {I:'D',  ii:'Em7',  V:'A7'},
+  {I:'Eb', ii:'Fm7',  V:'Bb7'},
+  {I:'E',  ii:'F#m7', V:'B7'},
+  {I:'F',  ii:'Gm7',  V:'C7'},
+  {I:'Gb', ii:'Abm7', V:'Db7'},
+  {I:'G',  ii:'Am7',  V:'D7'},
+  {I:'Ab', ii:'Bbm7', V:'Eb7'},
+  {I:'A',  ii:'Bm7',  V:'E7'},
+  {I:'Bb', ii:'Cm7',  V:'F7'},
+  {I:'B',  ii:'C#m7', V:'F#7'},
+];
+const MINOR = [
+  {I:'C',  ii:'Dm7b5',  V:'G7(b9)'},
+  {I:'Db', ii:'Ebm7b5', V:'Ab7(b9)'},
+  {I:'D',  ii:'Em7b5',  V:'A7(b9)'},
+  {I:'Eb', ii:'Fm7b5',  V:'Bb7(b9)'},
+  {I:'E',  ii:'F#m7b5', V:'B7(b9)'},
+  {I:'F',  ii:'Gm7b5',  V:'C7(b9)'},
+  {I:'Gb', ii:'Abm7b5', V:'Db7(b9)'},
+  {I:'G',  ii:'Am7b5',  V:'D7(b9)'},
+  {I:'Ab', ii:'Bbm7b5', V:'Eb7(b9)'},
+  {I:'A',  ii:'Bm7b5',  V:'E7(b9)'},
+  {I:'Bb', ii:'Cm7b5',  V:'F7(b9)'},
+  {I:'B',  ii:'C#m7b5', V:'F#7(b9)'},
+];
+
+const ANSWER_KEYS = ["C","C#","Db","D","D#","Eb","E","F","F#","Gb","G","G#","Ab","A","A#","Bb","B","Cb"];
+const PC = { 'C':0,'B#':0, 'C#':1,'Db':1, 'D':2, 'D#':3,'Eb':3, 'E':4,'Fb':4, 'F':5,'E#':5, 'F#':6,'Gb':6,
+             'G':7, 'G#':8,'Ab':8, 'A':9, 'A#':10,'Bb':10, 'B':11,'Cb':11 };
+function pcOf(n){ return PC[n]; }
+
+/* ===== Audio ===== */
+let audioCtx=null;
+function ensureAudio(){ if(!audioCtx){ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); } }
+function beep(freq=880, dur=0.12, type='sine', gain=0.08){
+  if(!audioCtx) return;
+  const o = audioCtx.createOscillator(), g=audioCtx.createGain();
+  o.type=type; o.frequency.value=freq; g.gain.value=gain;
+  o.connect(g).connect(audioCtx.destination); o.start(); setTimeout(()=>o.stop(), dur*1000);
+}
+function okSound(){ ensureAudio(); beep(932,0.12,'triangle',0.1); setTimeout(()=>beep(1245,0.08,'triangle',0.08),110); }
+function ngSound(){ ensureAudio(); beep(196,0.18,'sawtooth',0.08); }
+
+/* ===== DOM ===== */
+const $start  = document.getElementById('start');
+const $game   = document.getElementById('game');
+const $result = document.getElementById('result');
+const $qnum = document.getElementById('qnum');
+const $pbar = document.getElementById('pbar');
+const $tleft= document.getElementById('tleft');
+const $question = document.getElementById('question');
+const $answers  = document.getElementById('answers');
+const $dots = document.getElementById('dots');
+const $summaryDots = document.getElementById('summaryDots');
+const $score = document.getElementById('score');
+const $flash = document.getElementById('flash');
+const $summaryTableBody = document.querySelector('#summaryTable tbody');
+const modeBtns = {
+  iiV: document.getElementById('btn-mode-iiv'),
+  V7 : document.getElementById('btn-mode-v7'),
+  mix: document.getElementById('btn-mode-mix'),
+};
+
+/* ===== State ===== */
+let MODE = 'iiV';           // 'iiV' | 'V7' | 'mix'
+let TIME_PER_Q = 5;
+let qIndex = 0, score = 0, timerId=null, tRemain=0;
+let currentAnswerPC = 0;
+let currentIName = '';      // 推奨表記
+let currentDisplay = '';    // 問題表示
+let currentType = '';       // 'iiV' or 'V7'
+let details = [];           // {q, type, display, correctI, user, ok, enharmonic}
+
+/* Build answer buttons once */
+(function buildButtons(){
+  const frag = document.createDocumentFragment();
+  ANSWER_KEYS.forEach(k=>{
+    const b=document.createElement('button');
+    b.className='kbtn'; b.textContent=k;
+    b.addEventListener('click', ()=>onAnswer(k));
+    frag.appendChild(b);
+  });
+  $answers.appendChild(frag);
+})();
+
+function setMode(m){
+  MODE = m;
+  Object.keys(modeBtns).forEach(k=>modeBtns[k].classList.toggle('active', k===m));
+}
+setMode('iiV'); // 初期選択
+
+function renderDots(){
+  $dots.innerHTML='';
+  for(let i=0;i<10;i++){
+    const d=document.createElement('div');
+    const filled = i<details.length;
+    d.className='dot ' + (filled ? (details[i].ok?'ok':'ng') : 'pending');
+    d.textContent = filled ? (details[i].ok?'○':'×') : (i+1);
+    $dots.appendChild(d);
+  }
+}
+function showFlash(ok, html){
+  $flash.className='flash ' + (ok?'ok':'ng');
+  $flash.innerHTML = html;
+  $flash.style.display='block';
+  setTimeout(()=>{ $flash.style.display='none'; }, 1100);
+}
+
+/* Start / Reset */
+function startGame(sec){
+  ensureAudio();
+  TIME_PER_Q = sec; qIndex=0; score=0; details=[];
+  $start.style.display='none'; $result.style.display='none'; $game.style.display='block';
+  renderDots(); nextQuestion();
+}
+function resetAll(){ $result.style.display='none'; $start.style.display='block'; }
+
+/* One question */
+function nextQuestion(){
+  if(timerId){ clearInterval(timerId); timerId=null; }
+  if(qIndex>=10){ return endGame(); }
+
+  const isMinor = Math.random()<0.5;
+  const src = isMinor ? MINOR : MAJOR;
+  const p = src[Math.floor(Math.random()*src.length)];
+
+  // 決定：この問題は iiV か V7 か（mixの時はランダム）
+  if (MODE === 'mix') {
+    currentType = (Math.random()<0.5) ? 'iiV' : 'V7';
+  } else {
+    currentType = MODE; // 'iiV' or 'V7'
+  }
+
+  currentIName = p.I;                  // 推奨表記（#側/♭側）
+  currentAnswerPC = pcOf(p.I);
+
+  // 表示文
+  currentDisplay = (currentType==='iiV')
+    ? `ii–V: ${p.ii} → ${p.V}`
+    : `V7: ${p.V}`;
+
+  $qnum.textContent = (qIndex+1);
+  $question.textContent = currentDisplay;
+
+  tRemain = TIME_PER_Q; updateBar();
+  timerId = setInterval(()=>{
+    tRemain = Math.max(0, tRemain-0.1);
+    updateBar();
+    if(tRemain<=0){
+      clearInterval(timerId); timerId=null;
+      details.push({q:qIndex+1, type:currentType, display:currentDisplay, correctI:currentIName, user:'（時間切れ）', ok:false, enharmonic:false});
+      renderDots(); ngSound();
+      showFlash(false, `× 時間切れ… <br>正解 I（推奨）= <b>${currentIName}</b>`);
+      setTimeout(()=>{ qIndex++; nextQuestion(); }, 600);
+    }
+  },100);
+}
+
+function updateBar(){
+  const r = tRemain / TIME_PER_Q;
+  $pbar.style.width = (r*100).toFixed(1)+'%';
+  $tleft.textContent = tRemain.toFixed(1);
+  if(r>0.6){ $pbar.style.background='linear-gradient(90deg,#22e9a8,#18b7ff)'; }
+  else if(r>0.3){ $pbar.style.background='#ffd54f'; }
+  else{ $pbar.style.background='#ff6b6b'; }
+}
+
+/* Answer */
+function onAnswer(name){
+  if(timerId){ clearInterval(timerId); timerId=null; }
+  const samePC = pcOf(name) === currentAnswerPC;
+  const exactSpelling = (name === currentIName);
+  const ok = samePC; // 等音異名を許容
+  const enharm = samePC && !exactSpelling;
+
+  details.push({
+    q:qIndex+1, type:currentType, display:currentDisplay,
+    correctI:currentIName, user:name, ok, enharmonic:enharm
+  });
+
+  if(ok){
+    score++; okSound();
+    const tip = enharm ? `（推奨表記: <b>${currentIName}</b>）` : '';
+    showFlash(true, `○ 正解！ I = <b>${name}</b> ${tip}`);
+  }else{
+    ngSound();
+    showFlash(false, `× 不正解… 正解 I（推奨）= <b>${currentIName}</b> ／ あなた = <b>${name}</b>`);
+  }
+  renderDots();
+  setTimeout(()=>{ qIndex++; nextQuestion(); }, 500);
+}
+
+/* End */
+function endGame(){
+  $game.style.display='none';
+  $result.style.display='block';
+  $score.textContent = `${score}`;
+
+  // dots summary
+  $summaryDots.innerHTML='';
+  details.forEach(d=>{
+    const el=document.createElement('div');
+    el.className='dot ' + (d.ok?'ok':'ng');
+    el.textContent=d.ok?'○':'×';
+    $summaryDots.appendChild(el);
+  });
+
+  // table summary
+  $summaryTableBody.innerHTML='';
+  details.forEach(d=>{
+    const tr=document.createElement('tr');
+    const noteCol = d.ok && d.enharmonic ? `${d.correctI} <span class="muted">（≒ ${d.user}）</span>` : d.correctI;
+    const typeLabel = (d.type==='iiV') ? '25' : '5';
+    tr.innerHTML = `
+      <td>${d.q}</td>
+      <td>${typeLabel}</td>
+      <td>${d.display}</td>
+      <td><b>${noteCol}</b></td>
+      <td>${d.user}</td>
+      <td><span class="tag ${d.ok?'ok':'ng'}">${d.ok ? (d.enharmonic?'○（表記違い）':'○ 正解') : '× 不正解'}</span></td>
+    `;
+    $summaryTableBody.appendChild(tr);
+  });
+}
+</script>
+</body>
+</html>
+
