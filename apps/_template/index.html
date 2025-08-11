@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{APP_NAME}} — Music Skill Builder</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#111822">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<!-- Basic meta -->
+<meta name="description" content="{{APP_SHORT_DESC}}">
+<meta property="og:title" content="{{APP_NAME}} — Music Skill Builder">
+<meta property="og:description" content="{{APP_SHORT_DESC}}">
+<meta property="og:type" content="website">
+<meta property="og:image" content="icons/icon-512.png">
+
+<style>
+  :root{--bg:#0b0c10;--card:#111822;--fg:#eaf2f8;--acc:#66fcf1;}
+  html,body{margin:0;background:linear-gradient(180deg,#0b0c10,#1f2833);color:var(--fg);font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif}
+  .wrap{max-width:900px;margin:0 auto;padding:24px}
+  header h1{margin:.2rem 0;font-size:1.8rem;color:#9ee7ff}
+  .muted{opacity:.85}
+  .card{background:var(--card);border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  button{border:none;border-radius:12px;padding:12px 16px;background:#243447;color:var(--fg);font-weight:700}
+  button:hover{background:#2f4b66;cursor:pointer}
+  /* モバイル安定パッチ */
+  h1{font-size:clamp(1.4rem,5vw,1.9rem)}
+  p,button{font-size:clamp(1rem,3.5vw,1.05rem)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>{{APP_NAME}}</h1>
+    <p class="muted">{{APP_LONG_DESC}}</p>
+  </header>
+
+  <main class="card" id="app">
+    <!-- 👇 ここからあなたのUIを実装（雛形ボタンだけ置いてます） -->
+    <p class="muted">This is a fresh starter. Replace this with your UI.</p>
+    <button id="startBtn">Start</button>
+    <div id="log" style="margin-top:12px"></div>
+  </main>
+
+  <p style="margin-top:18px"><a href="../../">← Back to App List</a></p>
+</div>
+
+<script>
+// Service Worker（相対パスでサブフォルダ配信OK）
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(console.error));
+}
+
+// 例：簡単な動作確認
+document.getElementById('startBtn')?.addEventListener('click', ()=>{
+  const el=document.getElementById('log');
+  el.textContent = 'App started at ' + new Date().toLocaleTimeString();
+});
+</script>
+</body>
+</html>
